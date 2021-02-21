@@ -20,7 +20,7 @@ Since I wanted to learn writing Linux device drivers and understand kernel frame
 - Interrupt controller
   - Tested with [gpio_keys](https://www.kernel.org/doc/Documentation/devicetree/bindings/input/gpio-keys.txt) driver
 - [LED class](https://www.kernel.org/doc/html/latest/leds/leds-class.html) support.  
-  Configurabel features in DTS:
+  Configurable features in DTS:
   - Imax: full, 3/4, 1/2, 1/4
   - Default and max brightness
     - Max brightness can be limited in case 1/4 Imax is still too high for a LED
