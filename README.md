@@ -11,6 +11,8 @@ More information: <https://www.awinic.com/en/index/pageview/catid/19/id/15.html>
 The english datasheet is easily found with Google.
 
 The only downside for makers is its tiny QFN 4mm X 4mm-24L package. This is solvable with a QFN24 to DIP24 adapter board ([e.g. from AliExpress](https://www.aliexpress.com/item/1005001847723862.html)), solder paste and a heat gun.  
+Or simply get the new [Adafruit AW9523 GPIO Expander and LED Driver Breakout](https://www.adafruit.com/product/4886)!
+
 Since I wanted to learn writing Linux device drivers and understand kernel frameworks, this looked like a better alternative than the usual hello world exercises.
 
 ## Driver Features
