@@ -155,6 +155,7 @@ struct aw9523b {
 	unsigned	status; /* current status */
 	unsigned int	irq_parent;
 	unsigned	irq_enabled; /* enabled irqs */
+	struct gpio_desc *reset_gpio;
 
 	struct aw9523b_led *led_data; /* optional LED feature */
 };

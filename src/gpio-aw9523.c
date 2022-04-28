@@ -22,6 +22,7 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/of_gpio.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
 #include <linux/workqueue.h>
@@ -745,6 +746,11 @@ static int aw9523_probe(struct i2c_client *	    client,
 	}
 
 	i2c_set_clientdata(client, aw);
+
+	aw->reset_gpio = devm_gpiod_get(aw->dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(aw->reset_gpio))
+		return PTR_ERR(aw->reset_gpio);
+	gpiod_set_consumer_name(aw->reset_gpio, "aw9523b-reset");
 
 	aw->chip.label	= AW_DRV_NAME;
 	aw->chip.parent = aw->dev;
