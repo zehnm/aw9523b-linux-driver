@@ -183,6 +183,7 @@ static void aw9523_gpio_set_value(struct gpio_chip *chip, unsigned offset,
 	struct aw9523b *aw = gpiochip_get_data(chip);
 	u8		reg_num;
 	int		ret;
+	unsigned mask;
 
 	AW_DEBUG(aw->dev, "%s: enter, offset=%d, value=%d\n", __func__, offset,
 		 val);
@@ -194,7 +195,7 @@ static void aw9523_gpio_set_value(struct gpio_chip *chip, unsigned offset,
 		offset	= offset >> 8;
 	}
 
-	unsigned mask = BIT(offset);
+	mask = BIT(offset);
 
 	mutex_lock(&aw->lock);
 	ret = aw_set_mask(aw, reg_num, mask, !!val);
@@ -224,7 +225,7 @@ static int aw9523_gpio_request(struct gpio_chip *chip, unsigned offset)
 static int aw9523_gpio_set_config(struct gpio_chip *chip, unsigned int offset,
 				  unsigned long config)
 {
-	struct aw9523b *aw = gpiochip_get_data(chip);
+	struct aw9523b *aw __maybe_unused = gpiochip_get_data(chip);
 
 	AW_DEBUG(aw->dev, "Set gpio config: offset=%d, config=0x%04lx\n",
 		 offset, config);
@@ -374,15 +375,16 @@ static int aw9523_set_led_imax(struct aw9523b *aw, aw9523_imax_t imax)
 static int aw9523_set_dim_by_mask(struct aw9523b *aw, unsigned int mask,
 				  unsigned int brightness)
 {
-	AW_DEBUG(aw->dev, "%s: enter\n", __func__);
-
 	int ret	   = 0;
+	int i;
 	u8 *adjust = aw->led_data ? aw->led_data->brightness_adjust : NULL;
+
+	AW_DEBUG(aw->dev, "%s: enter\n", __func__);
 
 	mutex_lock(&aw->lock);
 
 	AW_DEBUG(aw->dev, "%s: inside mutex\n", __func__);
-	for (int i = 0; i < AW9523B_MAX_LEDS; i++) {
+	for (i = 0; i < AW9523B_MAX_LEDS; i++) {
 		if (mask & (0x1 << i)) {
 			/* map led mask to output register */
 			u8 reg = i < 8 ? REG_LED_DIM4_P0_0 + i :
@@ -443,6 +445,7 @@ static int aw9523_led_chip_init(struct aw9523b *aw)
 {
 	struct aw9523b_led *led = aw->led_data;
 	int		    ret;
+	int			i;
 
 	/* led_mask = led outputs as 1. Chip: 0 = LED mode, 1 = GPIO mode */
 	ret = aw9523_write_reg(aw, REG_LED_MODE_P0, ~(led->led_mask & 0xFF));
@@ -457,7 +460,7 @@ static int aw9523_led_chip_init(struct aw9523b *aw)
 	if (ret < 0)
 		return ret;
 
-	for (int i = 0; i < led->count; i++) {
+	for (i = 0; i < led->count; i++) {
 		ret = aw9523_set_dim_by_mask(aw, led->led_devs[i].led_mask,
 					     led->led_devs[i].cur_brightness);
 		if (ret < 0)
@@ -468,10 +471,12 @@ static int aw9523_led_chip_init(struct aw9523b *aw)
 
 static void aw9523_led_free_resources(struct aw9523b *aw)
 {
+	int i;
+
 	AW_DEBUG(aw->dev, "%s: enter\n", __func__);
 
 	if (aw->led_data) {
-		for (int i = 0; i < aw->led_data->count; i++) {
+		for (i = 0; i < aw->led_data->count; i++) {
 			AW_DEBUG(aw->dev, "%s: led_classdev_unregister %d\n",
 				 __func__, i);
 			devm_led_classdev_unregister(
@@ -492,6 +497,7 @@ static int aw9523_parse_led_devs(struct device_node *led_node,
 	u32 *			led_array;
 	u32 *			adjust_array;
 	int			i = 0;
+	int			j;
 	int			ret;
 
 	for_each_child_of_node (led_node, child) {
@@ -549,7 +555,7 @@ static int aw9523_parse_led_devs(struct device_node *led_node,
 				goto fail;
 			}
 		}
-		for (int j = 0; j < led_count; j++) {
+		for (j = 0; j < led_count; j++) {
 			u32 led_idx = led_array[j];
 			if (led_idx >= AW9523B_MAX_LEDS) {
 				dev_err(aw->dev,
@@ -636,6 +642,7 @@ static int aw9523_led_init(struct aw9523b *aw, struct device_node *led_node)
 {
 	unsigned int	    prop_val;
 	int		    ret = 0;
+	int			i;
 	struct aw9523b_led *led = NULL;
 
 	AW_DEBUG(aw->dev, "Initializing LED feature...\n");
@@ -694,7 +701,7 @@ static int aw9523_led_init(struct aw9523b *aw, struct device_node *led_node)
 	return 0;
 
 fail_led_class:
-	for (int i = 0; i < led->count; i++) {
+	for (i = 0; i < led->count; i++) {
 		devm_led_classdev_unregister(aw->dev, &led->led_devs[i].cdev);
 	}
 fail_led_devs:
@@ -714,6 +721,7 @@ static int aw9523_probe(struct i2c_client *	    client,
 	struct aw9523b *    aw;
 	struct device_node *led_node = NULL;
 	int		    ret	     = 0;
+	unsigned int reg_val;
 
 	dev_dbg(&client->dev, "Probing version %s\n", AW_DRV_VERSION);
 
@@ -761,7 +769,6 @@ static int aw9523_probe(struct i2c_client *	    client,
 
 	AW_DEBUG(aw->dev, "Testing chip identification...\n");
 
-	unsigned int reg_val;
 	ret = aw9523_read_reg(aw, REG_ID, &reg_val);
 	if (ret >= 0 && reg_val != AW9523B_ID) {
 		dev_err(aw->dev, "Expected chip id 0x%02x but got: 0x%02x\n",
@@ -870,9 +877,9 @@ fail_pre_gpiochip:
 
 static int aw9523_remove(struct i2c_client *client)
 {
-	AW_DEBUG(&client->dev, "%s: enter\n", __func__);
-
 	struct aw9523b *aw = i2c_get_clientdata(client);
+
+	AW_DEBUG(&client->dev, "%s: enter\n", __func__);
 
 	/* FIXME remove parent interrupt line configuration! But how?
 	   modprobe doesn't work anymore after rmmod and loading the driver a 2nd time:
