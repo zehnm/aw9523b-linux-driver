@@ -69,6 +69,7 @@ GPIO expander example with gpio-keys:
 		#gpio-cells = <2>;
 		interrupt-controller;
 		#interrupt-cells = <2>;
+		reset-gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&keys_int>;
@@ -119,6 +120,7 @@ Pure LED class example:
 	key_backlight: gpio@5b {
 		compatible = "awinic,aw9523b";
 		reg = <0x5b>;
+		reset-gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 
 		status = "okay";
 
