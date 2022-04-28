@@ -863,8 +863,6 @@ fail:
 	devm_gpiochip_remove(aw->dev, &aw->chip);
 
 fail_pre_gpiochip:
-	regmap_exit(aw->regmap);
-
 	mutex_destroy(&aw->lock);
 	aw9523_led_free_resources(aw);
 
@@ -893,11 +891,6 @@ static int aw9523_remove(struct i2c_client *client)
 
 	AW_DEBUG(&client->dev, "%s: devm_gpiochip_remove...\n", __func__);
 	devm_gpiochip_remove(&client->dev, &aw->chip);
-
-	/* FIXME regmap_exit leads to a NULL pointer after returning from this function! 
-	AW_DEBUG(&client->dev, "%s: regmap_exit...\n", __func__);
-	regmap_exit(aw->regmap);
-	*/
 
 	AW_DEBUG(&client->dev, "%s: mutex_destroy...\n", __func__);
 	mutex_destroy(&aw->lock);
